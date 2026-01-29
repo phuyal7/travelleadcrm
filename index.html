@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelLeadCRM - Modern Lead Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <p>Loading TravelLeadCRM...</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-plane-departure"></i>
+                <h1>TravelLead<span>CRM</span></h1>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#leads" class="nav-item" data-section="leads">
+                    <i class="fas fa-users"></i>
+                    <span>All Leads</span>
+                </a>
+                <a href="#agents" class="nav-item" data-section="agents">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Agents</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#settings" class="nav-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="today-stats">
+                    <div class="stats-label">TODAY</div>
+                    <div class="stats-value" id="todayCount">0 New Leads</div>
+                </div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff" alt="Admin">
+                    <div class="user-info">
+                        <div class="user-name">Admin User</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <div class="breadcrumb" id="breadcrumb">Dashboard / Overview</div>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search leads, agents...">
+                    </div>
+                    <button class="btn btn-primary" id="addLeadBtn">
+                        <i class="fas fa-plus"></i> Add New Lead
+                    </button>
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="content-section active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e0f2fe;">
+                            <i class="fas fa-users" style="color: #0369a1;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalLeads">0</div>
+                            <div class="stat-label">Total Leads</div>
+                        </div>
+                        <div class="stat-trend up">+12%</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f0f9ff;">
+                            <i class="fas fa-user-plus" style="color: #0ea5e9;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="newToday">0</div>
+                            <div class="stat-label">New Today</div>
+                        </div>
+                        <div class="stat-trend up">+5</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f0fdf4;">
+                            <i class="fas fa-chart-pie" style="color: #16a34a;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="conversionRate">0%</div>
+                            <div class="stat-label">Conversion Rate</div>
+                        </div>
+                        <div class="stat-trend down">-2%</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fefce8;">
+                            <i class="fas fa-dollar-sign" style="color: #ca8a04;"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="totalRevenue">$0</div>
+                            <div class="stat-label">Total Revenue</div>
+                        </div>
+                        <div class="stat-trend up">+18%</div>
+                    </div>
+                </div>
+
+                <!-- Charts and Recent Leads -->
+                <div class="dashboard-content">
+                    <div class="chart-container">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Leads Overview</h3>
+                                <select id="timeFilter">
+                                    <option value="7">Last 7 Days</option>
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="90">Last 90 Days</option>
+                                </select>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="leadsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-leads">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Recent Leads</h3>
+                                <a href="#leads" class="view-all">View All →</a>
+                            </div>
+                            <div class="card-body">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Destination</th>
+                                            <th>Date</th>
+                                            <th>Budget</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentLeadsTable">
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- All Leads Section -->
+            <section id="leadsSection" class="content-section">
+                <div class="section-header">
+                    <h2>All Leads</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-outline" id="filterBtn">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                        <button class="btn btn-outline" id="exportBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <div class="search-leads">
+                            <input type="text" placeholder="Search leads..." id="leadSearch">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Destination</th>
+                                    <th>Contact</th>
+                                    <th>Budget</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allLeadsTable">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                        <div class="table-footer">
+                            <div class="pagination">
+                                <button class="btn btn-outline" id="prevPage">Previous</button>
+                                <span>Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                                <button class="btn btn-outline" id="nextPage">Next</button>
+                            </div>
+                            <div class="table-info">
+                                Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> leads
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agents Section -->
+            <section id="agentsSection" class="content-section">
+                <div class="section-header">
+                    <h2>Agents</h2>
+                    <button class="btn btn-primary" id="addAgentBtn">
+                        <i class="fas fa-user-plus"></i> Add Agent
+                    </button>
+                </div>
+                
+                <div class="agents-grid" id="agentsGrid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analyticsSection" class="content-section">
+                <div class="section-header">
+                    <h2>Analytics Dashboard</h2>
+                    <div class="date-range">
+                        <input type="date" id="startDate">
+                        <span>to</span>
+                        <input type="date" id="endDate">
+                        <button class="btn btn-primary">Apply</button>
+                    </div>
+                </div>
+                
+                <div class="analytics-grid">
+                    <div class="card">
+                        <h3>Top Destinations</h3>
+                        <canvas id="destinationChart"></canvas>
+                    </div>
+                    <div class="card">
+                        <h3>Lead Sources</h3>
+                        <canvas id="sourceChart"></canvas>
+                    </div>
+                    <div class="card">
+                        <h3>Revenue Trend</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="card">
+                        <h3>Agent Performance</h3>
+                        <canvas id="agentChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settingsSection" class="content-section">
+                <div class="section-header">
+                    <h2>Settings</h2>
+                </div>
+                
+                <div class="settings-grid">
+                    <div class="card">
+                        <h3>General Settings</h3>
+                        <form id="generalSettings">
+                            <div class="form-group">
+                                <label>Company Name</label>
+                                <input type="text" id="companyName" value="TravelLeadCRM">
+                            </div>
+                            <div class="form-group">
+                                <label>Default Currency</label>
+                                <select id="currency">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="INR">INR (₹)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Time Zone</label>
+                                <select id="timezone">
+                                    <option value="UTC">UTC</option>
+                                    <option value="UTC+5:45" selected>UTC+5:45 (Nepal)</option>
+                                    <option value="UTC+5:30">UTC+5:30 (India)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Notification Settings</h3>
+                        <form id="notificationSettings">
+                            <div class="form-group checkbox">
+                                <input type="checkbox" id="emailNotifications" checked>
+                                <label for="emailNotifications">Email Notifications</label>
+                            </div>
+                            <div class="form-group">
+                                <label>Notification Email</label>
+                                <input type="email" id="notificationEmail" value="admin@travelleadcrm.com">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Notifications</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Lead Modal -->
+    <div id="addLeadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Lead</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="leadForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name *</label>
+                            <input type="text" id="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name *</label>
+                            <input type="text" id="lastName" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phone">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Destination *</label>
+                        <input type="text" id="destination" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Travel Dates</label>
+                            <input type="text" id="travelDates" placeholder="e.g., Feb 2026">
+                        </div>
+                        <div class="form-group">
+                            <label>Budget ($)</label>
+                            <input type="number" id="budget" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Number of Travelers</label>
+                            <input type="number" id="travelers" min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Trip Type</label>
+                            <select id="tripType">
+                                <option value="vacation">Vacation</option>
+                                <option value="trekking">Trekking</option>
+                                <option value="business">Business</option>
+                                <option value="honeymoon">Honeymoon</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="status">
+                            <option value="New">New</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="Qualified">Qualified</option>
+                            <option value="Converted">Converted</option>
+                            <option value="Lost">Lost</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Lead</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="toast toast-success">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operation completed successfully!</span>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="errorToast" class="toast toast-error">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="errorMessage">An error occurred!</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
