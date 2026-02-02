@@ -7,33 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
-    <!-- Add Firebase SDK via CDN -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-    
-    <!-- Your Firebase Configuration -->
-    <script>
-        // Replace with YOUR actual Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyBfHChZp3QeSYi7pOCZ8-p2G63hIxs68rU",
-            authDomain: "travelleadcrm.firebaseapp.com",
-            databaseURL: "https://travelleadcrm-default-rtdb.firebaseio.com",
-            projectId: "travelleadcrm",
-            storageBucket: "travelleadcrm.firebasestorage.app",
-            messagingSenderId: "55869821135",
-            appId: "1:55869821135:web:41b4742971ec0d20f767ba"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        
-        // Make Firebase globally available
-        window.firebaseApp = firebase.app();
-        firebaseDatabase = firebase.database();
-    </script>
-    
     <!-- Your main script -->
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </head>
 <body>
     <!-- Loading Screen -->

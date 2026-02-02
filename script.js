@@ -1,8 +1,23 @@
-// script.js - Travel Lead CRM with Firebase (CDN Version)
+// script.js - Travel Lead CRM with Firebase (ES Modules)
 
-// Get Firebase from global scope (loaded via CDN in index.html)
-const { ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } = firebase.database;
-const database = firebaseDatabase;
+// Firebase ES Module imports
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+import { getDatabase, ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBfHChZp3QeSYi7pOCZ8-p2G63hIxs68rU",
+    authDomain: "travelleadcrm.firebaseapp.com",
+    databaseURL: "https://travelleadcrm-default-rtdb.firebaseio.com",
+    projectId: "travelleadcrm",
+    storageBucket: "travelleadcrm.firebasestorage.app",
+    messagingSenderId: "55869821135",
+    appId: "1:55869821135:web:41b4742971ec0d20f767ba"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
 // Database reference paths
 const DB_PATHS = {
