@@ -9,6 +9,7 @@ import { getAnalytics } from "firebase/analytics";
 const firebaseConfig = {
   apiKey: "AIzaSyBfHChZp3QeSYi7pOCZ8-p2G63hIxs68rU",
   authDomain: "travelleadcrm.firebaseapp.com",
+  databaseURL: "https://travelleadcrm-default-rtdb.firebaseio.com",
   projectId: "travelleadcrm",
   storageBucket: "travelleadcrm.firebasestorage.app",
   messagingSenderId: "55869821135",

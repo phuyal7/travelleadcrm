@@ -1,8 +1,8 @@
 // script.js - Travel Lead CRM with Firebase (CDN Version)
 
 // Get Firebase from global scope (loaded via CDN in index.html)
-const { database } = firebaseDatabase;
-const { ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } = firebaseDatabase;
+const { ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } = firebase.database;
+const database = firebaseDatabase;
 
 // Database reference paths
 const DB_PATHS = {
