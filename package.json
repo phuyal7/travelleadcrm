@@ -1,0 +1,24 @@
+{
+  "name": "travel-lead-crm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phuyal7/travelleadcrm.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/phuyal7/travelleadcrm/issues"
+  },
+  "homepage": "https://github.com/phuyal7/travelleadcrm#readme",
+  "dependencies": {
+    "firebase": "^12.8.0"
+  }
+}
