@@ -1,22 +1,8 @@
-// firebase-config.js (Separate file - create this first)
-// Save this as firebase-config.js in the same directory
+// script.js - Travel Lead CRM with Firebase (CDN Version)
 
-// script.js - Main application file with Firebase integration
-
-// Import Firebase functions
-import { 
-    database, 
-    ref, 
-    set, 
-    get, 
-    update, 
-    remove, 
-    onValue,
-    push,
-    query,
-    orderByChild,
-    equalTo
-} from './firebase-config.js';
+// Get Firebase from global scope (loaded via CDN in index.html)
+const { database } = firebaseDatabase;
+const { ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } = firebaseDatabase;
 
 // Database reference paths
 const DB_PATHS = {
@@ -86,9 +72,12 @@ const firebaseDB = {
                 await set(ref(database, DB_PATHS.SETTINGS), initialSettings);
                 
                 console.log('Firebase initialized with demo data');
+                return true;
             }
+            return false;
         } catch (error) {
             console.error('Error initializing Firebase:', error);
+            throw error;
         }
     },
 
@@ -340,6 +329,13 @@ const UI = {
     // Initialize
     init: async function() {
         try {
+            console.log('Initializing TravelLeadCRM...');
+            
+            // Check if Firebase is loaded
+            if (!firebaseDatabase) {
+                throw new Error('Firebase not loaded. Check CDN scripts.');
+            }
+            
             // Initialize Firebase data
             await firebaseDB.initializeFirebaseData();
             
@@ -356,9 +352,37 @@ const UI = {
             this.hideLoadingScreen();
             
             console.log('Travel Lead CRM initialized with Firebase');
+            this.showToast('App loaded successfully!', 'success');
+            
         } catch (error) {
             console.error('Error initializing app:', error);
-            this.showToast('Failed to initialize app. Check console for details.', 'error');
+            
+            // Show user-friendly error on loading screen
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.innerHTML = `
+                    <div style="text-align: center; padding: 40px; max-width: 500px; margin: 0 auto;">
+                        <div style="color: #dc2626; margin-bottom: 20px; font-size: 48px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3 style="color: #dc2626; margin-bottom: 16px;">Connection Error</h3>
+                        <p style="margin-bottom: 20px;">Cannot connect to Firebase database. Please check:</p>
+                        <div style="text-align: left; background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                            <p><strong>1. Internet connection</strong></p>
+                            <p><strong>2. Firebase configuration</strong> (check index.html)</p>
+                            <p><strong>3. Open browser console (F12) for details</strong></p>
+                        </div>
+                        <button onclick="location.reload()" class="btn" style="margin-top: 10px;">
+                            <i class="fas fa-redo"></i> Retry Connection
+                        </button>
+                        <button onclick="window.open('https://console.firebase.google.com/', '_blank')" class="btn btn-outline" style="margin-top: 10px; margin-left: 10px;">
+                            <i class="fas fa-external-link-alt"></i> Open Firebase Console
+                        </button>
+                    </div>
+                `;
+            }
+            
+            this.showToast('Failed to initialize app. Check console.', 'error');
         }
     },
     
@@ -402,11 +426,14 @@ const UI = {
         });
         
         // Add Lead Button
-        document.getElementById('addLeadBtn').addEventListener('click', () => {
-            this.showModal('addLeadModal');
-            document.getElementById('leadForm').reset();
-            delete document.getElementById('leadForm').dataset.leadId;
-        });
+        const addLeadBtn = document.getElementById('addLeadBtn');
+        if (addLeadBtn) {
+            addLeadBtn.addEventListener('click', () => {
+                this.showModal('addLeadModal');
+                document.getElementById('leadForm').reset();
+                delete document.getElementById('leadForm').dataset.leadId;
+            });
+        }
         
         // Modal Close
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -416,26 +443,38 @@ const UI = {
         });
         
         // Lead Form Submit
-        document.getElementById('leadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.saveLead();
-        });
+        const leadForm = document.getElementById('leadForm');
+        if (leadForm) {
+            leadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.saveLead();
+            });
+        }
         
         // Search
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            this.searchLeads(e.target.value);
-        });
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchLeads(e.target.value);
+            });
+        }
         
         // Export Button
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            this.exportLeads();
-        });
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportLeads();
+            });
+        }
         
         // Settings Forms
-        document.getElementById('generalSettings').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.saveGeneralSettings();
-        });
+        const settingsForm = document.getElementById('generalSettings');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.saveGeneralSettings();
+            });
+        }
         
         // Click outside modal to close
         document.querySelectorAll('.modal').forEach(modal => {
@@ -445,6 +484,42 @@ const UI = {
                 }
             });
         });
+        
+        // Test Connection Button (for debugging)
+        const testBtn = document.createElement('button');
+        testBtn.innerHTML = '<i class="fas fa-bug"></i>';
+        testBtn.className = 'btn-icon';
+        testBtn.style.position = 'fixed';
+        testBtn.style.bottom = '20px';
+        testBtn.style.right = '20px';
+        testBtn.style.zIndex = '1000';
+        testBtn.title = 'Test Firebase Connection';
+        testBtn.onclick = () => this.testFirebaseConnection();
+        document.body.appendChild(testBtn);
+    },
+    
+    // Test Firebase Connection
+    testFirebaseConnection: async function() {
+        try {
+            this.showToast('Testing Firebase connection...', 'success');
+            
+            // Test read
+            const leads = await firebaseDB.getLeads();
+            console.log('Firebase test - Leads count:', leads.length);
+            
+            // Test write
+            const testRef = ref(database, 'testConnection');
+            await set(testRef, {
+                test: 'success',
+                timestamp: new Date().toISOString()
+            });
+            
+            this.showToast(`Firebase connection successful! ${leads.length} leads loaded.`, 'success');
+            
+        } catch (error) {
+            console.error('Firebase test failed:', error);
+            this.showToast('Firebase connection failed: ' + error.message, 'error');
+        }
     },
     
     // Section Navigation
@@ -460,15 +535,24 @@ const UI = {
         });
         
         // Show selected section
-        document.getElementById(sectionName + 'Section').classList.add('active');
+        const sectionElement = document.getElementById(sectionName + 'Section');
+        if (sectionElement) {
+            sectionElement.classList.add('active');
+        }
         
         // Activate corresponding nav item
-        document.querySelector(`.nav-item[data-section="${sectionName}"]`).classList.add('active');
+        const navItem = document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+        if (navItem) {
+            navItem.classList.add('active');
+        }
         
         // Update page title
         const title = sectionName.charAt(0).toUpperCase() + sectionName.slice(1);
-        document.getElementById('pageTitle').textContent = title;
-        document.getElementById('breadcrumb').textContent = title + ' / Overview';
+        const pageTitle = document.getElementById('pageTitle');
+        const breadcrumb = document.getElementById('breadcrumb');
+        
+        if (pageTitle) pageTitle.textContent = title;
+        if (breadcrumb) breadcrumb.textContent = title + ' / Overview';
         
         // Load section data
         try {
@@ -497,7 +581,10 @@ const UI = {
     
     // Modal Controls
     showModal: function(modalId) {
-        document.getElementById(modalId).classList.add('active');
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('active');
+        }
     },
     
     hideAllModals: function() {
@@ -509,7 +596,10 @@ const UI = {
     // Loading Screen
     hideLoadingScreen: function() {
         setTimeout(() => {
-            document.getElementById('loadingScreen').style.display = 'none';
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
         }, 1000);
     },
     
@@ -517,9 +607,18 @@ const UI = {
     showToast: function(message, type = 'success') {
         const toast = type === 'success' ? 'successToast' : 'errorToast';
         const toastElement = document.getElementById(toast);
+        
+        if (!toastElement) {
+            console.warn('Toast element not found:', toast);
+            return;
+        }
+        
         const messageElement = toastElement.querySelector('span');
         
-        messageElement.textContent = message;
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+        
         toastElement.classList.add('active');
         
         setTimeout(() => {
@@ -556,15 +655,25 @@ const UI = {
     
     updateDashboardStats: function(analytics) {
         // Update stats cards
-        document.getElementById('totalLeads').textContent = analytics.totalLeads;
-        document.getElementById('newToday').textContent = analytics.newToday;
-        document.getElementById('conversionRate').textContent = analytics.conversionRate;
-        document.getElementById('totalRevenue').textContent = analytics.totalRevenue;
-        document.getElementById('todayCount').textContent = `${analytics.newToday} New Leads`;
+        const updateElement = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        
+        updateElement('totalLeads', analytics.totalLeads);
+        updateElement('newToday', analytics.newToday);
+        updateElement('conversionRate', analytics.conversionRate);
+        updateElement('totalRevenue', analytics.totalRevenue);
+        
+        const todayCount = document.getElementById('todayCount');
+        if (todayCount) {
+            todayCount.textContent = `${analytics.newToday} New Leads`;
+        }
     },
     
     loadRecentLeads: function(leads) {
         const tableBody = document.getElementById('recentLeadsTable');
+        if (!tableBody) return;
         
         tableBody.innerHTML = '';
         
@@ -602,6 +711,7 @@ const UI = {
     
     renderAllLeads: function(leads) {
         const tableBody = document.getElementById('allLeadsTable');
+        if (!tableBody) return;
         
         tableBody.innerHTML = '';
         
@@ -634,8 +744,13 @@ const UI = {
         });
         
         // Update counts
-        document.getElementById('totalCount').textContent = leads.length;
-        document.getElementById('showingCount').textContent = leads.length;
+        const updateElement = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        };
+        
+        updateElement('totalCount', leads.length);
+        updateElement('showingCount', leads.length);
     },
     
     // Save Lead
@@ -672,7 +787,7 @@ const UI = {
             this.hideAllModals();
             
             // Refresh data
-            if (document.getElementById('dashboardSection').classList.contains('active')) {
+            if (document.getElementById('dashboardSection')?.classList.contains('active')) {
                 await this.loadDashboard();
             } else {
                 await this.loadAllLeads();
@@ -738,20 +853,61 @@ const UI = {
         try {
             const lead = await firebaseDB.getLead(id);
             if (lead) {
-                alert(`Lead Details:
-ID: ${lead.id}
-Name: ${lead.firstName} ${lead.lastName}
-Email: ${lead.email}
-Phone: ${lead.phone}
-Destination: ${lead.destination}
-Budget: $${lead.budget}
-Status: ${lead.status}
-Created: ${lead.createdDate}`);
+                // Create a modal to show lead details
+                const modalHTML = `
+                    <div class="modal active" id="viewLeadModal">
+                        <div class="modal-content" style="max-width: 600px;">
+                            <div class="modal-header">
+                                <h3>Lead Details: ${lead.firstName} ${lead.lastName}</h3>
+                                <button class="close-modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="lead-details-grid">
+                                    <div><strong>ID:</strong> ${lead.id}</div>
+                                    <div><strong>Email:</strong> ${lead.email}</div>
+                                    <div><strong>Phone:</strong> ${lead.phone || 'N/A'}</div>
+                                    <div><strong>Destination:</strong> ${lead.destination || 'N/A'}</div>
+                                    <div><strong>Travel Dates:</strong> ${lead.travelDates || 'N/A'}</div>
+                                    <div><strong>Budget:</strong> $${lead.budget || '0'}</div>
+                                    <div><strong>Travelers:</strong> ${lead.travelers || '1'}</div>
+                                    <div><strong>Trip Type:</strong> ${lead.tripType || 'N/A'}</div>
+                                    <div><strong>Status:</strong> <span class="status-badge status-${lead.status.toLowerCase()}">${lead.status}</span></div>
+                                    <div><strong>Source:</strong> ${lead.source || 'Website'}</div>
+                                    <div><strong>Created Date:</strong> ${lead.createdDate}</div>
+                                    <div><strong>Last Updated:</strong> ${new Date(lead.lastUpdated).toLocaleString()}</div>
+                                </div>
+                                ${lead.notes ? `<div style="margin-top: 20px;"><strong>Notes:</strong><p style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-top: 8px;">${lead.notes}</p></div>` : ''}
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-outline" onclick="UI.hideAllModals()">Close</button>
+                                <button class="btn" onclick="UI.editLead('${id}')">Edit Lead</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add modal to page
+                const modalContainer = document.createElement('div');
+                modalContainer.innerHTML = modalHTML;
+                document.body.appendChild(modalContainer);
+                
+                // Add close event
+                modalContainer.querySelector('.close-modal').addEventListener('click', () => {
+                    modalContainer.remove();
+                });
+                
+                // Close when clicking outside
+                modalContainer.querySelector('.modal').addEventListener('click', (e) => {
+                    if (e.target === modalContainer.querySelector('.modal')) {
+                        modalContainer.remove();
+                    }
+                });
             } else {
                 this.showToast('Lead not found', 'error');
             }
         } catch (error) {
             console.error('Error viewing lead:', error);
+            this.showToast('Failed to load lead details', 'error');
         }
     },
     
@@ -779,6 +935,8 @@ Created: ${lead.createdDate}`);
     
     renderFilteredLeads: function(leads) {
         const tableBody = document.getElementById('allLeadsTable');
+        if (!tableBody) return;
+        
         tableBody.innerHTML = '';
         
         leads.forEach(lead => {
@@ -803,7 +961,8 @@ Created: ${lead.createdDate}`);
             tableBody.appendChild(row);
         });
         
-        document.getElementById('showingCount').textContent = leads.length;
+        const showingCount = document.getElementById('showingCount');
+        if (showingCount) showingCount.textContent = leads.length;
     },
     
     // Export Leads
@@ -847,6 +1006,8 @@ Created: ${lead.createdDate}`);
             const agents = await firebaseDB.getAgents();
             const grid = document.getElementById('agentsGrid');
             
+            if (!grid) return;
+            
             grid.innerHTML = '';
             
             agents.forEach(agent => {
@@ -886,14 +1047,19 @@ Created: ${lead.createdDate}`);
         const ctx = document.getElementById('leadsChart');
         if (!ctx) return;
         
+        // Destroy existing chart if any
+        if (window.leadsChartInstance) {
+            window.leadsChartInstance.destroy();
+        }
+        
         const chartCtx = ctx.getContext('2d');
         
-        // Group leads by month
+        // Group leads by month (simplified)
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const currentMonth = new Date().getMonth();
         const last6Months = monthNames.slice(currentMonth - 5, currentMonth + 1);
         
-        // Count leads per month (simplified - in real app, group by actual dates)
+        // Count leads per month (in a real app, you'd group by actual created dates)
         const monthlyCounts = last6Months.map(() => Math.floor(Math.random() * 20) + 5);
         
         const chartData = {
@@ -909,12 +1075,7 @@ Created: ${lead.createdDate}`);
             }]
         };
         
-        // Destroy existing chart if any
-        if (window.leadsChart) {
-            window.leadsChart.destroy();
-        }
-        
-        window.leadsChart = new Chart(chartCtx, {
+        window.leadsChartInstance = new Chart(chartCtx, {
             type: 'line',
             data: chartData,
             options: {
@@ -942,11 +1103,16 @@ Created: ${lead.createdDate}`);
             const analytics = await firebaseDB.getAnalytics();
             if (analytics) {
                 // Update analytics page UI
-                document.getElementById('analyticsTotalLeads').textContent = analytics.totalLeads;
-                document.getElementById('analyticsConversionRate').textContent = analytics.conversionRate;
-                document.getElementById('analyticsTotalRevenue').textContent = analytics.totalRevenue;
-                document.getElementById('analyticsTopDestination').textContent = analytics.topDestination;
-                document.getElementById('analyticsBestAgent').textContent = analytics.bestAgent;
+                const updateElement = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                };
+                
+                updateElement('analyticsTotalLeads', analytics.totalLeads);
+                updateElement('analyticsConversionRate', analytics.conversionRate);
+                updateElement('analyticsTotalRevenue', analytics.totalRevenue);
+                updateElement('analyticsTopDestination', analytics.topDestination);
+                updateElement('analyticsBestAgent', analytics.bestAgent);
             }
         } catch (error) {
             console.error('Error loading analytics:', error);
@@ -1023,6 +1189,25 @@ document.addEventListener('DOMContentLoaded', () => {
             height: 100vh;
             font-size: 18px;
             color: var(--gray-600);
+            background: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+        }
+        
+        .lead-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .lead-details-grid > div {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
         }
     `;
     document.head.appendChild(style);
@@ -1033,3 +1218,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Make UI globally available for onclick handlers
 window.UI = UI;
+window.firebaseDB = firebaseDB; // Optional: for debugging
