@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Firebase</title>
+</head>
+<body>
+    <h1>Testing Firebase Import</h1>
+    <div id="output"></div>
+
+    <script type="module">
+        const output = document.getElementById('output');
+
+        try {
+            output.innerHTML = 'Setting up Firebase config...';
+            const firebaseConfig = {
+                apiKey: "AIzaSyBfHChZp3QeSYi7pOCZ8-p2G63hIxs68rU",
+                authDomain: "travelleadcrm.firebaseapp.com",
+                databaseURL: "https://travelleadcrm-default-rtdb.firebaseio.com",
+                projectId: "travelleadcrm",
+                storageBucket: "travelleadcrm.firebasestorage.app",
+                messagingSenderId: "55869821135",
+                appId: "1:55869821135:web:41b4742971ec0d20f767ba",
+                measurementId: "G-WPQS7BKV0G"
+            };
+            output.innerHTML += '<br>Config set up';
+
+            output.innerHTML += '<br>Loading Firebase app...';
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
+            output.innerHTML += '<br>App module loaded';
+
+            output.innerHTML += '<br>Loading Firestore...';
+            const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
+            output.innerHTML += '<br>Firestore module loaded';
+
+            output.innerHTML += '<br>Initializing Firebase...';
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            output.innerHTML += '<br>Firebase initialized successfully!';
+
+        } catch (error) {
+            output.innerHTML += '<br><strong>Error:</strong> ' + error.message;
+            console.error(error);
+        }
+    </script>
+</body>
+</html>

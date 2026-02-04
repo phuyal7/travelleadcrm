@@ -1,8 +1,8 @@
 // script.js - Travel Lead CRM with Firebase (ES Modules)
 
 // Firebase ES Module imports
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-import { getDatabase, ref, set, get, update, remove, onValue, push, query, orderByChild, equalTo } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getFirestore, collection, doc, addDoc, getDocs, getDoc, updateDoc, deleteDoc, setDoc, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -12,15 +12,16 @@ const firebaseConfig = {
     projectId: "travelleadcrm",
     storageBucket: "travelleadcrm.firebasestorage.app",
     messagingSenderId: "55869821135",
-    appId: "1:55869821135:web:41b4742971ec0d20f767ba"
+    appId: "1:55869821135:web:41b4742971ec0d20f767ba",
+    measurementId: "G-WPQS7BKV0G"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const db = getFirestore(app);
 
-// Database reference paths
-const DB_PATHS = {
+// Firestore collection names
+const COLLECTIONS = {
     LEADS: 'leads',
     AGENTS: 'agents',
     ANALYTICS: 'analytics',
@@ -30,15 +31,15 @@ const DB_PATHS = {
 // Firebase Database Operations
 const firebaseDB = {
     // Generate unique ID
-    generateId: () => push(ref(database)).key,
-    
+    generateId: () => 'LEAD' + Date.now().toString().slice(-6),
+
     // Initialize Firebase data structure
     initializeFirebaseData: async () => {
         try {
-            const leadsRef = ref(database, DB_PATHS.LEADS);
-            const snapshot = await get(leadsRef);
-            
-            if (!snapshot.exists()) {
+            const leadsCollection = collection(db, COLLECTIONS.LEADS);
+            const leadsSnapshot = await getDocs(leadsCollection);
+
+            if (leadsSnapshot.empty) {
                 // Add initial demo data
                 const initialLead = {
                     id: 'LEAD001',
@@ -58,7 +59,7 @@ const firebaseDB = {
                     createdDate: new Date().toLocaleDateString('en-US'),
                     lastUpdated: new Date().toISOString()
                 };
-                
+
                 const initialAgent = {
                     id: 'AGT001',
                     name: 'Sarah Johnson',
@@ -69,7 +70,7 @@ const firebaseDB = {
                     performanceScore: 85,
                     joinDate: '2023-01-15'
                 };
-                
+
                 const initialSettings = {
                     companyName: 'TravelLeadCRM',
                     defaultStatus: 'New',
@@ -80,18 +81,18 @@ const firebaseDB = {
                     adminEmail: 'admin@travelleadcrm.com',
                     emailNotifications: true
                 };
-                
+
                 // Set initial data
-                await set(ref(database, `${DB_PATHS.LEADS}/LEAD001`), initialLead);
-                await set(ref(database, `${DB_PATHS.AGENTS}/AGT001`), initialAgent);
-                await set(ref(database, DB_PATHS.SETTINGS), initialSettings);
-                
-                console.log('Firebase initialized with demo data');
+                await setDoc(doc(db, COLLECTIONS.LEADS, 'LEAD001'), initialLead);
+                await setDoc(doc(db, COLLECTIONS.AGENTS, 'AGT001'), initialAgent);
+                await setDoc(doc(db, COLLECTIONS.SETTINGS, 'main'), initialSettings);
+
+                console.log('Firestore initialized with demo data');
                 return true;
             }
             return false;
         } catch (error) {
-            console.error('Error initializing Firebase:', error);
+            console.error('Error initializing Firestore:', error);
             throw error;
         }
     },
@@ -99,18 +100,18 @@ const firebaseDB = {
     // Lead Operations
     getLeads: async () => {
         try {
-            const leadsRef = ref(database, DB_PATHS.LEADS);
-            const snapshot = await get(leadsRef);
-            
-            if (snapshot.exists()) {
-                const leads = snapshot.val();
-                // Convert object to array
-                return Object.keys(leads).map(key => ({
-                    ...leads[key],
-                    firebaseKey: key
-                }));
-            }
-            return [];
+            const leadsCollection = collection(db, COLLECTIONS.LEADS);
+            const leadsSnapshot = await getDocs(leadsCollection);
+
+            const leads = [];
+            leadsSnapshot.forEach((doc) => {
+                leads.push({
+                    ...doc.data(),
+                    firebaseKey: doc.id
+                });
+            });
+
+            return leads;
         } catch (error) {
             console.error('Error getting leads:', error);
             return [];
@@ -119,11 +120,11 @@ const firebaseDB = {
 
     getLead: async (id) => {
         try {
-            const leadRef = ref(database, `${DB_PATHS.LEADS}/${id}`);
-            const snapshot = await get(leadRef);
-            
-            if (snapshot.exists()) {
-                return { ...snapshot.val(), firebaseKey: id };
+            const leadDoc = doc(db, COLLECTIONS.LEADS, id);
+            const leadSnapshot = await getDoc(leadDoc);
+
+            if (leadSnapshot.exists()) {
+                return { ...leadSnapshot.data(), firebaseKey: id };
             }
             return null;
         } catch (error) {
@@ -141,14 +142,14 @@ const firebaseDB = {
                 createdDate: new Date().toLocaleDateString('en-US'),
                 lastUpdated: new Date().toISOString()
             };
-            
-            const leadRef = ref(database, `${DB_PATHS.LEADS}/${leadId}`);
-            await set(leadRef, leadWithId);
-            
+
+            const leadDoc = doc(db, COLLECTIONS.LEADS, leadId);
+            await setDoc(leadDoc, leadWithId);
+
             // Update analytics
             await firebaseDB.updateAnalytics();
-            
-            console.log('Lead added to Firebase:', leadId);
+
+            console.log('Lead added to Firestore:', leadId);
             return leadWithId;
         } catch (error) {
             console.error('Error adding lead:', error);
@@ -158,23 +159,23 @@ const firebaseDB = {
 
     updateLead: async (id, updates) => {
         try {
-            const leadRef = ref(database, `${DB_PATHS.LEADS}/${id}`);
-            const snapshot = await get(leadRef);
-            
-            if (snapshot.exists()) {
-                const currentData = snapshot.val();
+            const leadDoc = doc(db, COLLECTIONS.LEADS, id);
+            const leadSnapshot = await getDoc(leadDoc);
+
+            if (leadSnapshot.exists()) {
+                const currentData = leadSnapshot.data();
                 const updatedData = {
                     ...currentData,
                     ...updates,
                     lastUpdated: new Date().toISOString()
                 };
-                
-                await update(leadRef, updatedData);
-                
+
+                await updateDoc(leadDoc, updatedData);
+
                 // Update analytics
                 await firebaseDB.updateAnalytics();
-                
-                console.log('Lead updated in Firebase:', id);
+
+                console.log('Lead updated in Firestore:', id);
                 return updatedData;
             }
             return null;
@@ -186,13 +187,13 @@ const firebaseDB = {
 
     deleteLead: async (id) => {
         try {
-            const leadRef = ref(database, `${DB_PATHS.LEADS}/${id}`);
-            await remove(leadRef);
-            
+            const leadDoc = doc(db, COLLECTIONS.LEADS, id);
+            await deleteDoc(leadDoc);
+
             // Update analytics
             await firebaseDB.updateAnalytics();
-            
-            console.log('Lead deleted from Firebase:', id);
+
+            console.log('Lead deleted from Firestore:', id);
             return true;
         } catch (error) {
             console.error('Error deleting lead:', error);
@@ -203,13 +204,15 @@ const firebaseDB = {
     // Agent Operations
     getAgents: async () => {
         try {
-            const agentsRef = ref(database, DB_PATHS.AGENTS);
-            const snapshot = await get(agentsRef);
-            
-            if (snapshot.exists()) {
-                return Object.values(snapshot.val());
-            }
-            return [];
+            const agentsCollection = collection(db, COLLECTIONS.AGENTS);
+            const agentsSnapshot = await getDocs(agentsCollection);
+
+            const agents = [];
+            agentsSnapshot.forEach((doc) => {
+                agents.push(doc.data());
+            });
+
+            return agents;
         } catch (error) {
             console.error('Error getting agents:', error);
             return [];
@@ -219,11 +222,11 @@ const firebaseDB = {
     // Analytics Operations
     getAnalytics: async () => {
         try {
-            const analyticsRef = ref(database, DB_PATHS.ANALYTICS);
-            const snapshot = await get(analyticsRef);
-            
-            if (snapshot.exists()) {
-                return snapshot.val();
+            const analyticsDoc = doc(db, COLLECTIONS.ANALYTICS, 'main');
+            const analyticsSnapshot = await getDoc(analyticsDoc);
+
+            if (analyticsSnapshot.exists()) {
+                return analyticsSnapshot.data();
             }
             return null;
         } catch (error) {
@@ -236,15 +239,15 @@ const firebaseDB = {
         try {
             const leads = await firebaseDB.getLeads();
             const agents = await firebaseDB.getAgents();
-            
+
             const today = new Date().toLocaleDateString('en-US');
             const totalLeads = leads.length;
             const newToday = leads.filter(lead => lead.createdDate === today).length;
             const convertedLeads = leads.filter(lead => lead.status === 'Converted').length;
             const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) + '%' : '0%';
-            
+
             const totalRevenue = leads.reduce((sum, lead) => sum + (parseFloat(lead.budget) || 0), 0);
-            
+
             // Find top destination
             const destinationCount = {};
             leads.forEach(lead => {
@@ -252,10 +255,10 @@ const firebaseDB = {
                     destinationCount[lead.destination] = (destinationCount[lead.destination] || 0) + 1;
                 }
             });
-            
+
             const topDestination = Object.entries(destinationCount)
                 .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
-            
+
             const analyticsData = {
                 totalLeads,
                 newToday,
@@ -265,10 +268,10 @@ const firebaseDB = {
                 bestAgent: agents[0]?.name || 'N/A',
                 lastUpdated: new Date().toISOString()
             };
-            
-            const analyticsRef = ref(database, DB_PATHS.ANALYTICS);
-            await set(analyticsRef, analyticsData);
-            
+
+            const analyticsDoc = doc(db, COLLECTIONS.ANALYTICS, 'main');
+            await setDoc(analyticsDoc, analyticsData);
+
             return analyticsData;
         } catch (error) {
             console.error('Error updating analytics:', error);
@@ -279,11 +282,11 @@ const firebaseDB = {
     // Settings Operations
     getSettings: async () => {
         try {
-            const settingsRef = ref(database, DB_PATHS.SETTINGS);
-            const snapshot = await get(settingsRef);
-            
-            if (snapshot.exists()) {
-                return snapshot.val();
+            const settingsDoc = doc(db, COLLECTIONS.SETTINGS, 'main');
+            const settingsSnapshot = await getDoc(settingsDoc);
+
+            if (settingsSnapshot.exists()) {
+                return settingsSnapshot.data();
             }
             return null;
         } catch (error) {
@@ -294,16 +297,18 @@ const firebaseDB = {
 
     updateSettings: async (updates) => {
         try {
-            const settingsRef = ref(database, DB_PATHS.SETTINGS);
-            const snapshot = await get(settingsRef);
-            
-            if (snapshot.exists()) {
-                const currentSettings = snapshot.val();
+            const settingsDoc = doc(db, COLLECTIONS.SETTINGS, 'main');
+            const settingsSnapshot = await getDoc(settingsDoc);
+
+            if (settingsSnapshot.exists()) {
+                const currentSettings = settingsSnapshot.data();
                 const updatedSettings = { ...currentSettings, ...updates };
-                await set(settingsRef, updatedSettings);
+                await updateDoc(settingsDoc, updatedSettings);
                 return updatedSettings;
+            } else {
+                await setDoc(settingsDoc, updates);
+                return updates;
             }
-            return updates;
         } catch (error) {
             console.error('Error updating settings:', error);
             throw error;
@@ -312,28 +317,26 @@ const firebaseDB = {
 
     // Real-time Listeners
     setupLeadsListener: (callback) => {
-        const leadsRef = ref(database, DB_PATHS.LEADS);
-        
-        onValue(leadsRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const leads = snapshot.val();
-                const leadsArray = Object.keys(leads).map(key => ({
-                    ...leads[key],
-                    firebaseKey: key
-                }));
-                callback(leadsArray);
-            } else {
-                callback([]);
-            }
+        const leadsCollection = collection(db, COLLECTIONS.LEADS);
+
+        return onSnapshot(leadsCollection, (snapshot) => {
+            const leads = [];
+            snapshot.forEach((doc) => {
+                leads.push({
+                    ...doc.data(),
+                    firebaseKey: doc.id
+                });
+            });
+            callback(leads);
         });
     },
 
     setupAnalyticsListener: (callback) => {
-        const analyticsRef = ref(database, DB_PATHS.ANALYTICS);
-        
-        onValue(analyticsRef, (snapshot) => {
-            if (snapshot.exists()) {
-                callback(snapshot.val());
+        const analyticsDoc = doc(db, COLLECTIONS.ANALYTICS, 'main');
+
+        return onSnapshot(analyticsDoc, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                callback(docSnapshot.data());
             }
         });
     }
@@ -347,8 +350,8 @@ const UI = {
             console.log('Initializing TravelLeadCRM...');
             
             // Check if Firebase is loaded
-            if (!firebaseDatabase) {
-                throw new Error('Firebase not loaded. Check CDN scripts.');
+            if (!db) {
+                throw new Error('Firestore not loaded. Check CDN scripts.');
             }
             
             // Initialize Firebase data
@@ -381,7 +384,7 @@ const UI = {
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <h3 style="color: #dc2626; margin-bottom: 16px;">Connection Error</h3>
-                        <p style="margin-bottom: 20px;">Cannot connect to Firebase database. Please check:</p>
+                        <p style="margin-bottom: 20px;">Cannot connect to Firestore database. Please check:</p>
                         <div style="text-align: left; background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
                             <p><strong>1. Internet connection</strong></p>
                             <p><strong>2. Firebase configuration</strong> (check index.html)</p>
@@ -516,24 +519,24 @@ const UI = {
     // Test Firebase Connection
     testFirebaseConnection: async function() {
         try {
-            this.showToast('Testing Firebase connection...', 'success');
-            
+            this.showToast('Testing Firestore connection...', 'success');
+
             // Test read
             const leads = await firebaseDB.getLeads();
-            console.log('Firebase test - Leads count:', leads.length);
-            
-            // Test write
-            const testRef = ref(database, 'testConnection');
-            await set(testRef, {
+            console.log('Firestore test - Leads count:', leads.length);
+
+            // Test write to a test collection
+            const testDoc = doc(db, 'test', 'connection');
+            await setDoc(testDoc, {
                 test: 'success',
                 timestamp: new Date().toISOString()
             });
-            
-            this.showToast(`Firebase connection successful! ${leads.length} leads loaded.`, 'success');
-            
+
+            this.showToast(`Firestore connection successful! ${leads.length} leads loaded.`, 'success');
+
         } catch (error) {
-            console.error('Firebase test failed:', error);
-            this.showToast('Firebase connection failed: ' + error.message, 'error');
+            console.error('Firestore test failed:', error);
+            this.showToast('Firestore connection failed: ' + error.message, 'error');
         }
     },
     
